@@ -7,7 +7,25 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+    if params[:sorting_rule] != nil 
+      @sorting_rule = params[:sorting_rule]
+    else
+      @sorting_rule = session[:sorting_rule]
+    end
+
+    @all_ratings = Movie.get_all_ratings
+    @ratings =  params[:ratings] || session[:ratings] || Hash[@all_ratings.map {|rating| [rating, rating]}]
+
+    @movies = Movie.where(rating:@ratings.keys).order(@sorting_rule)
+
+    # save current config in session
+    if params[:sorting_rule] != session[:sorting_rule] or params[:ratings] != session[:ratings]
+      session[:ratings] = @ratings
+      session[:sorting_rule] = @sorting_rule
+      flash.keep
+      redirect_to movies_path(sorting_rule: session[:sorting_rule], ratings: session[:ratings])
+    end
+
   end
 
   def new
